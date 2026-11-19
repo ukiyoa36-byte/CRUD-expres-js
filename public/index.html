@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Manajemen Data Mahasiswa</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+    <div class="container">
+        <div class="card header">
+            <div>
+                <h1>Sistem Manajemen Data Mahasiswa</h1>
+                <p>Aplikasi CRUD Express.js & MySQL</p>
+            </div>
+            <span class="badge">REST API Connected</span>
+        </div>
+
+        <div class="card">
+            <h2 id="formTitle">Tambah Mahasiswa Baru</h2>
+            <form id="formMahasiswa" class="form-grid">
+                <input type="hidden" id="id">
+                
+                <div class="form-group">
+                    <label for="nim">NIM</label>
+                    <input type="text" id="nim" placeholder="2551507001" required>
+                </div>
+
+                <div class="form-group">
+                    <label for="nama">Nama Lengkap</label>
+                    <input type="text" id="nama" placeholder="Nama Mahasiswa" required>
+                </div>
+
+                <div class="form-group">
+                    <label for="prodi">Program Studi</label>
+                    <input type="text" id="prodi" placeholder="Teknologi Informasi" required>
+                </div>
+
+                <div class="btn-group">
+                    <button type="submit" id="btnSimpan" class="btn-primary">+ Tambah</button>
+                    <button type="button" id="btnBatal" class="btn-secondary" style="display:none;" onclick="resetForm()">Batal</button>
+                </div>
+            </form>
+        </div>
+
+        <div class="card table-card">
+            <table>
+                <thead>
+                    <tr>
+                        <th>No</th>
+                        <th>NIM</th>
+                        <th>Nama Lengkap</th>
+                        <th>Program Studi</th>
+                        <th class="text-center">Aksi</th>
+                    </tr>
+                </thead>
+                <tbody id="tabelBody">
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <script>
+        const API_URL = '/api/mahasiswa';
+
+        async function loadData() {
+            const res = await fetch(API_URL);
+            const data = await res.json();
+            const tbody = document.getElementById('tabelBody');
+            tbody.innerHTML = '';
+
+            if (data.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="5" class="empty-state">Belum ada data mahasiswa. Silakan tambah data melalui form di atas.</td></tr>`;
+                return;
+            }
+
+            data.forEach((mhs, index) => {
+                tbody.innerHTML += `
+                    <tr>
+                        <td>${index + 1}</td>
+                        <td><strong>${mhs.nim}</strong></td>
+                        <td>${mhs.nama}</td>
+                        <td>${mhs.prodi}</td>
+                        <td class="text-center">
+                            <button class="btn-edit" onclick="editData(${mhs.id}, '${mhs.nim}', '${mhs.nama}', '${mhs.prodi}')">Edit</button>
+                            <button class="btn-delete" onclick="hapusData(${mhs.id})">Hapus</button>
+                        </td>
+                    </tr>
+                `;
+            });
+        }
+
+        document.getElementById('formMahasiswa').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const id = document.getElementById('id').value;
+            const payload = {
+                nim: document.getElementById('nim').value,
+                nama: document.getElementById('nama').value,
+                prodi: document.getElementById('prodi').value
+            };
+
+            if (id) {
+                await fetch(`${API_URL}/${id}`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+            } else {
+                await fetch(API_URL, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+            }
+
+            resetForm();
+            loadData();
+        });
+
+        function editData(id, nim, nama, prodi) {
+            document.getElementById('id').value = id;
+            document.getElementById('nim').value = nim;
+            document.getElementById('nama').value = nama;
+            document.getElementById('prodi').value = prodi;
+            
+            document.getElementById('formTitle').innerText = 'Edit Data Mahasiswa';
+            const btnSimpan = document.getElementById('btnSimpan');
+            btnSimpan.innerText = 'Simpan Perubahan';
+            btnSimpan.className = 'btn-update';
+            document.getElementById('btnBatal').style.display = 'inline-block';
+        }
+
+        async function hapusData(id) {
+            if (confirm('Yakin ingin menghapus data ini?')) {
+                await fetch(`${API_URL}/${id}`, { method: 'DELETE' });
+                loadData();
+            }
+        }
+
+        function resetForm() {
+            document.getElementById('formMahasiswa').reset();
+            document.getElementById('id').value = '';
+            document.getElementById('formTitle').innerText = 'Tambah Mahasiswa Baru';
+            const btnSimpan = document.getElementById('btnSimpan');
+            btnSimpan.innerText = '+ Tambah';
+            btnSimpan.className = 'btn-primary';
+            document.getElementById('btnBatal').style.display = 'none';
+        }
+
+        loadData();
+    </script>
+</body>
+</html>
